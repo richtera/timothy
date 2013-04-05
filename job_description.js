@@ -1,5 +1,6 @@
 var fs = require('fs');
 var exec = require('child_process').exec;
+var path = require('path');
 
 var JobDescription = function() { 
     this.filesToCompress = [];
@@ -175,7 +176,29 @@ JobDescription.prototype.execute = function(index, cb) {
 	      output = this.configuration.output;
 
     console.log("* executing");
-    var command = this.configuration.hadoopHome+"/bin/hadoop jar "+this.configuration.hadoopHome+"/contrib/streaming/hadoop*streaming*.jar ";
+    function findFile(dir, regex) {
+      var l = fs.readdirSync(dir);
+      var o = null;
+      l.some(function (file) {
+        var sd = path.join(dir, file);
+        var s = fs.statSync(sd);
+        if (s.isDirectory()) {
+          o = findFile(sd, regex);
+          if (o)
+            return o;
+        } else if (regex.test(file)) {
+          o = sd;
+          return sd;
+        }
+        return null;
+      });
+      return o;
+    }
+    var streamingJar = findFile(this.configuration.hadoopHome, /hadoop-streaming.*\.jar/);
+    if (!streamingJar)
+      return cb(new Error('Unable to find hadoop-streaming-*.jar'), null);
+    this.configuration.hadoopCommand = this.configuration.hadoopCommand || (this.configuration.hadoopHome + "/bin/hadoop");
+    var command = this.configuration.hadoopCommand + " jar "+ streamingJar + " ";
     command += "-D mapred.job.name='"+jobName+"' ";
 
     if(this.configuration.numMapTasks != null)

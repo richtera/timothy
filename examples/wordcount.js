@@ -1,5 +1,7 @@
 require('../index')
     .configure({	
+  hadoopCommand: '/Users/andy/dse-3.0/bin/dse hadoop',
+  hadoopHome: '/Users/andy/dse-3.0/resources/hadoop',
 	config: './hadoop.xml',
 	input: "/tmp/loremipsum.txt",
 	output: "/tmp/processed_"+(new Date().getTime()),
